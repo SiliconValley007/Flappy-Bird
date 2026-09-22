@@ -2,7 +2,7 @@
 
 A single-file Flappy Bird–style game. Tight physics, fullscreen on every screen size, no build step.
 
-Open [index.html](index.html) in a browser, or play it on GitHub Pages after you publish.
+Open [index.html](index.html) in a browser, or play it on GitHub Pages website(link below description, top right side).
 
 ## Play
 
@@ -36,11 +36,7 @@ You can also open `index.html` directly as a file. Some browsers mute Web Audio 
 3. In the repo: **Settings → Pages**.
 4. Set **Source** to **Deploy from a branch**.
 5. Choose your default branch and folder `/` (root).
-6. Save. After a minute the site is live at:
-
-```text
-https://<your-username>.github.io/<your-repo>/
-```
+6. Save. After a minute the site is live.
 
 If the repo is named `<username>.github.io`, Pages serves it from the root of that domain.
 
@@ -54,7 +50,3 @@ One self-contained `index.html` (inline CSS + JS). No CDNs, no assets, no framew
 - Safe-area padding for notched phones
 - Instant SFX via Web Audio API
 - Score + best score, game over panel, fast retry loop
-
-## License
-
-Use and modify freely.
