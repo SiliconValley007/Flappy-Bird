@@ -1,8 +1,10 @@
 # FLAP
 
-A single-file Flappy Bird–style game. Tight physics, fullscreen on every screen size, no build step.
+A single-file Flappy Bird–style game. Tight physics, fullscreen on phones, tablets, and desktops. No build step.
 
-Open [index.html](index.html) in a browser, or play it on GitHub Pages website(link below description, top right side).
+**Play live:** https://siliconvalley007.github.io/Flappy-Bird/
+
+Or open `index.html` in a browser.
 
 ## Play
 
@@ -28,17 +30,6 @@ python3 -m http.server 8000
 Then open `http://localhost:8000`.
 
 You can also open `index.html` directly as a file. Some browsers mute Web Audio until a gesture, which this game already waits for.
-
-## Publish on GitHub Pages
-
-1. Create a new GitHub repository.
-2. Push this project (at least `index.html` and this README) to the default branch.
-3. In the repo: **Settings → Pages**.
-4. Set **Source** to **Deploy from a branch**.
-5. Choose your default branch and folder `/` (root).
-6. Save. After a minute the site is live.
-
-If the repo is named `<username>.github.io`, Pages serves it from the root of that domain.
 
 ## What is in the file
 

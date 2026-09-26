@@ -8,16 +8,38 @@
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="FLAP" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
     <meta name="theme-color" content="#70C5CE" />
+    <meta name="color-scheme" content="light" />
     <meta
       name="description"
       content="FLAP — a tight, fullscreen Flappy Bird–style game. Tap, click, or press Space to fly."
     />
     <meta name="format-detection" content="telephone=no" />
+    <link
+      rel="canonical"
+      href="https://siliconvalley007.github.io/Flappy-Bird/"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FLAP" />
+    <meta
+      property="og:description"
+      content="A tight, fullscreen Flappy Bird–style game. Tap, click, or press Space to fly."
+    />
+    <meta
+      property="og:url"
+      content="https://siliconvalley007.github.io/Flappy-Bird/"
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="FLAP" />
+    <meta
+      name="twitter:description"
+      content="A tight, fullscreen Flappy Bird–style game. Tap, click, or press Space to fly."
+    />
     <title>FLAP</title>
     <link
       rel="icon"
@@ -65,27 +87,60 @@
         cursor: pointer;
         outline: none;
       }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     </style>
   </head>
   <body>
     <canvas
       id="g"
       tabindex="0"
-      role="img"
-      aria-label="FLAP. Tap, click, or press Space to fly."
+      role="application"
+      aria-label="FLAP. Tap, click, or press Space to fly. Esc or P pauses. M mutes."
     ></canvas>
+    <p id="sr" class="sr" aria-live="polite">
+      FLAP. Tap, click, or press Space to fly.
+    </p>
+    <noscript>FLAP needs JavaScript enabled to play.</noscript>
     <script>
       (() => {
         "use strict";
         const C = document.getElementById("g");
-        const X = C.getContext("2d", { alpha: false, desynchronized: true });
+        if (!C) return;
+        let X = null;
+        try {
+          X = C.getContext("2d", { alpha: false, desynchronized: true });
+        } catch (e) {}
+        if (!X)
+          try {
+            X = C.getContext("2d", { alpha: false });
+          } catch (e) {}
+        if (!X) X = C.getContext("2d");
+        if (!X) {
+          document.body.textContent = "FLAP needs a canvas-capable browser.";
+          return;
+        }
         const HS = "flap-best-v1",
           MS = "flap-mute-v1";
         const G = 0.52,
           JMP = -8.15,
           MF = 11.2,
           BASE = 2.72;
-        const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
+        let reduce = mqReduce.matches;
+        function say(msg) {
+          const el = document.getElementById("sr");
+          if (el) el.textContent = msg;
+        }
 
         function lsGet(k) {
           try {
@@ -382,6 +437,7 @@
             st = "paused";
             last = 0;
             acc = 0;
+            say("Paused. Score " + score + ". Best " + best + ".");
           }
         }
         function resume() {
@@ -389,6 +445,7 @@
             st = "play";
             last = 0;
             acc = 0;
+            say("Resumed.");
           }
         }
         function restart() {
@@ -397,6 +454,7 @@
           spawnPipe(1);
           last = 0;
           acc = 0;
+          say("Restarted.");
           flapPlay();
         }
         function menu() {
@@ -428,6 +486,7 @@
           if (st === "ready") {
             st = "play";
             if (!pipes.length) spawnPipe(1);
+            say("Flying.");
             flapPlay();
             return;
           }
@@ -442,6 +501,7 @@
         function toggleMute() {
           muted = !muted;
           lsSet(MS, muted ? "1" : "0");
+          say(muted ? "Sound off." : "Sound on.");
         }
 
         function hit() {
@@ -458,6 +518,9 @@
             5.2 * U,
           );
           sfx("hit");
+          say(
+            "Game over. Score " + score + ". Best " + best + ". Tap to retry.",
+          );
           if (navigator.vibrate)
             try {
               navigator.vibrate([18, 30, 40]);
@@ -855,9 +918,13 @@
         }
         function panel() {
           const pw = Math.min(300 * U, W - 24 - SAL - SAR),
-            ph = Math.min(220 * U, H * 0.52),
+            ph = Math.min(
+              220 * U,
+              Math.max(140 * U, H * 0.52),
+              H - SAT - SAB - 24,
+            ),
             x = (W - pw) / 2,
-            y = Math.max(SAT + 12, H * 0.28);
+            y = Math.max(SAT + 8, Math.min(H * 0.28, H - ph - SAB - 12));
           card(pw, ph, x, y);
           text(
             "GAME OVER",
@@ -913,11 +980,11 @@
           X.fillStyle = "rgba(20,40,40,0.42)";
           X.fillRect(0, 0, W, H);
           const pw = Math.min(300 * U, W - 24 - SAL - SAR),
-            bh = 44 * U,
-            gap = 10 * U,
-            ph = Math.min(268 * U, bh * 3 + gap * 4 + 72 * U);
+            bh = Math.min(44 * U, Math.max(36, (H - SAT - SAB) * 0.11)),
+            gap = 8 * U,
+            ph = Math.min(H - SAT - SAB - 16, bh * 3 + gap * 4 + 72 * U);
           const x = (W - pw) / 2,
-            y = Math.max(SAT + 12, (H - ph) / 2);
+            y = Math.max(SAT + 8, Math.min((H - ph) / 2, H - ph - SAB - 8));
           card(pw, ph, x, y);
           text(
             "PAUSED",
@@ -1108,9 +1175,11 @@
         function canvasXY(e) {
           const r = C.getBoundingClientRect();
           const src = e.changedTouches ? e.changedTouches[0] : e;
+          const rw = r.width || W || 1,
+            rh = r.height || H || 1;
           return [
-            (src.clientX - r.left) * (W / r.width),
-            (src.clientY - r.top) * (H / r.height),
+            (src.clientX - r.left) * (W / rw),
+            (src.clientY - r.top) * (H / rh),
           ];
         }
         let lastTap = 0;
@@ -1206,13 +1275,31 @@
         addEventListener("blur", () => {
           if (st === "play") pause();
         });
-        matchMedia("(prefers-reduced-motion: reduce)").addEventListener?.(
-          "change",
-          () => {},
-        );
+        addEventListener("pagehide", () => {
+          if (st === "play") pause();
+        });
+        addEventListener("pageshow", () => {
+          last = 0;
+          acc = 0;
+          fit();
+        });
+        const onReduce = (e) => {
+          reduce = !!(e && e.matches);
+        };
+        if (mqReduce.addEventListener)
+          mqReduce.addEventListener("change", onReduce);
+        else if (mqReduce.addListener) mqReduce.addListener(onReduce);
 
         fit();
         resetWorld();
+        try {
+          C.focus({ preventScroll: true });
+        } catch (e) {
+          try {
+            C.focus();
+          } catch (e2) {}
+        }
+        say("FLAP. Tap, click, or press Space to fly.");
         requestAnimationFrame(loop);
       })();
     </script>
