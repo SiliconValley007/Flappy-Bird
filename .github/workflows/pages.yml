@@ -1,0 +1,113 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp build version and sitemap date
+        run: |
+          SHA="${{ github.sha }}"
+          STAMP_DATE="$(date -u +%Y-%m-%d)"
+          sed -i "s/__BUILD__/${SHA}/g" sw.js game.js
+          sed -i "s/__LASTMOD__/${STAMP_DATE}/g" sitemap.xml
+
+      - name: Check JavaScript
+        run: |
+          for f in $(find . -name '*.js' -not -path './.git/*' -not -path './_site/*'); do
+            node --check "$f"
+          done
+          python3 -c "from pathlib import Path;h=Path('404.html').read_text();s=h.split('<script>',1)[1].split('</script>',1)[0];Path('/tmp/flap_404check.js').write_text(s)"
+          node --check /tmp/flap_404check.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Stage site
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+          import shutil, re, sys
+          root = Path('.')
+          html = (root / 'index.html').read_text()
+          man = (root / 'manifest.webmanifest').read_text()
+          sw = (root / 'sw.js').read_text()
+          refs = set()
+          for m in re.findall(r'(?:href|src)="([^"]+)"', html):
+              if m.startswith('http') or m.startswith('data:') or m.startswith('#'):
+                  continue
+              refs.add(m.split('?')[0])
+          for m in re.findall(r'property="og:image"[^>]*content="([^"]+)"|content="([^"]+)"[^>]*property="og:image"', html):
+              url = m[0] or m[1]
+              name = url.rsplit('/', 1)[-1]
+              if name:
+                  refs.add(name)
+          for m in re.findall(r'name="twitter:image"[^>]*content="([^"]+)"|content="([^"]+)"[^>]*name="twitter:image"', html):
+              url = m[0] or m[1]
+              name = url.rsplit('/', 1)[-1]
+              if name:
+                  refs.add(name)
+          for m in re.findall(r'"src":\s*"([^"]+)"', man):
+              refs.add(m)
+          for m in re.findall(r'"\./([^"]+)"', sw):
+              refs.add(m)
+          extra = [
+              'index.html', 'style.css', 'game.js', 'sw.js',
+              'manifest.webmanifest', '404.html', 'robots.txt',
+              'sitemap.xml', 'LICENSE', 'README.md', '.nojekyll'
+          ]
+          missing = [r for r in sorted(refs) if not (root / r).exists()]
+          if missing:
+              print('MISSING referenced files:', missing)
+              sys.exit(1)
+          site = root / '_site'
+          site.mkdir(parents=True, exist_ok=True)
+          staged = set()
+          def stage(name):
+              src = root / name
+              if not src.exists() or not src.is_file() or name in staged:
+                  return
+              if name.startswith('_') or name.startswith('.git'):
+                  return
+              shutil.copy2(src, site / src.name)
+              staged.add(name)
+          for name in list(refs) + extra:
+              stage(name)
+          allowed = {'.html', '.css', '.js', '.json', '.webmanifest', '.xml', '.txt', '.md', '.png', '.svg', '.ico', '.webp', '.woff2'}
+          for src in root.iterdir():
+              if src.is_file() and not src.name.startswith('.') and src.suffix.lower() in allowed:
+                  stage(src.name)
+          stage('.nojekyll')
+          if not (site / 'index.html').exists():
+              print('MISSING index.html in staged site')
+              sys.exit(1)
+          print('staged', sorted(staged))
+          PY
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

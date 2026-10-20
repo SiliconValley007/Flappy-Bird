@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://siliconvalley007.github.io/Flappy-Bird/sitemap.xml

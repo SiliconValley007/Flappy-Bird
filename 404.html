@@ -2,11 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0;url=./" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#70C5CE" />
     <link rel="canonical" href="./" />
     <title>FLAP</title>
     <script>
-      location.replace("./");
+      (function () {
+        try {
+          var s = location.pathname.split("/");
+          var home = s.length > 2 && s[1] ? "/" + s[1] + "/" : "./";
+          location.replace(home);
+        } catch (e) {
+          location.replace("./");
+        }
+      })();
     </script>
   </head>
   <body>
