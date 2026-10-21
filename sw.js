@@ -29,7 +29,13 @@ function sameOrigin(url) {
 
 function cacheOk(req, res) {
   try {
-    if (!res || res.status !== 200 || req.method !== "GET" || !sameOrigin(req.url)) return;
+    if (
+      !res ||
+      res.status !== 200 ||
+      req.method !== "GET" ||
+      !sameOrigin(req.url)
+    )
+      return;
     if (res.type === "opaque") return;
     var copy = res.clone();
     caches
@@ -48,7 +54,7 @@ function offlinePage(navigation) {
         status: 503,
         statusText: "Offline",
         headers: { "Content-Type": "text/plain; charset=utf-8" },
-      })
+      }),
     );
   }
   return caches.match("./index.html").then(function (page) {
@@ -71,7 +77,7 @@ self.addEventListener("install", function (event) {
         return Promise.all(
           ASSETS.map(function (url) {
             return cache.add(url).catch(function () {});
-          })
+          }),
         );
       })
       .then(function () {
@@ -79,7 +85,7 @@ self.addEventListener("install", function (event) {
       })
       .catch(function () {
         if (!self.registration.active) return self.skipWaiting();
-      })
+      }),
   );
 });
 
@@ -90,13 +96,14 @@ self.addEventListener("activate", function (event) {
       .then(function (keys) {
         return Promise.all(
           keys.map(function (key) {
-            if (key !== CACHE && key.indexOf("flap-") === 0) return caches.delete(key);
-          })
+            if (key !== CACHE && key.indexOf("flap-") === 0)
+              return caches.delete(key);
+          }),
         );
       })
       .then(function () {
         return self.clients.claim();
-      })
+      }),
   );
 });
 
@@ -120,7 +127,7 @@ self.addEventListener("fetch", function (event) {
           return caches.match(req, { ignoreSearch: true }).then(function (hit) {
             return hit || offlinePage(true);
           });
-        })
+        }),
     );
     return;
   }
@@ -137,14 +144,10 @@ self.addEventListener("fetch", function (event) {
           return offlinePage(false);
         });
       if (hit) {
-        event.waitUntil(
-          net
-            .then(function () {})
-            .catch(function () {})
-        );
+        event.waitUntil(net.then(function () {}).catch(function () {}));
         return hit;
       }
       return net;
-    })
+    }),
   );
 });

@@ -188,7 +188,10 @@
     const pa = parseInt(a.slice(1), 16);
     const pb = parseInt(b.slice(1), 16);
     const r = ((pa >> 16) + (((pb >> 16) - (pa >> 16)) * t + 0.5)) | 0;
-    const g = (((pa >> 8) & 255) + ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t + 0.5)) | 0;
+    const g =
+      (((pa >> 8) & 255) +
+        ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t + 0.5)) |
+      0;
     const bl = ((pa & 255) + (((pb & 255) - (pa & 255)) * t + 0.5)) | 0;
     return "#" + ((1 << 24) | (r << 16) | (g << 8) | bl).toString(16).slice(1);
   }
@@ -214,7 +217,9 @@
   }
   function dayKey(d) {
     const t = d || new Date();
-    return t.getFullYear() + "-" + pad2(t.getMonth() + 1) + "-" + pad2(t.getDate());
+    return (
+      t.getFullYear() + "-" + pad2(t.getMonth() + 1) + "-" + pad2(t.getDate())
+    );
   }
   function lsGet(k) {
     try {
@@ -260,7 +265,8 @@
     };
   }
   function skinById(id) {
-    for (let i = 0; i < SKINS.length; i++) if (SKINS[i].id === id) return SKINS[i];
+    for (let i = 0; i < SKINS.length; i++)
+      if (SKINS[i].id === id) return SKINS[i];
     return SKINS[0];
   }
   function sanitizeHistory(list) {
@@ -272,9 +278,18 @@
       const s = safeInt(e.s, -1);
       if (s < 0) continue;
       const m = MODES[e.m] ? e.m : "classic";
-      let d = typeof e.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.d) ? e.d : dayKey();
+      let d =
+        typeof e.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.d)
+          ? e.d
+          : dayKey();
       let t = safeInt(e.t, 0);
-      out.push({ s: s, m: m, d: d, t: t, k: typeof e.k === "string" ? e.k : "sunny" });
+      out.push({
+        s: s,
+        m: m,
+        d: d,
+        t: t,
+        k: typeof e.k === "string" ? e.k : "sunny",
+      });
     }
     out.sort(function (a, b) {
       return b.s - a.s || b.t - a.t;
@@ -306,7 +321,8 @@
       scheduleSave();
       sfx("unlock");
       toast("SKIN UNLOCKED: " + added[0].name);
-      if (bird && !reduce) burst(bird.x, bird.y, 16, ["#F8D64E", "#FFF7E0", "#8C7BFF"], 4 * U);
+      if (bird && !reduce)
+        burst(bird.x, bird.y, 16, ["#F8D64E", "#FFF7E0", "#8C7BFF"], 4 * U);
     }
     return added;
   }
@@ -322,8 +338,12 @@
           s.best = safeInt(o.best, 0);
           if (o.settings && typeof o.settings === "object") {
             s.settings.muted = !!o.settings.muted;
-            s.settings.sfx = clamp01(o.settings.sfx == null ? 1 : o.settings.sfx);
-            s.settings.music = clamp01(o.settings.music == null ? 0.4 : o.settings.music);
+            s.settings.sfx = clamp01(
+              o.settings.sfx == null ? 1 : o.settings.sfx,
+            );
+            s.settings.music = clamp01(
+              o.settings.music == null ? 0.4 : o.settings.music,
+            );
             s.settings.haptics = o.settings.haptics !== false;
           }
           if (o.stats && typeof o.stats === "object") {
@@ -333,7 +353,10 @@
           }
           if (o.skins && typeof o.skins === "object") {
             s.skins.unlocked = unlockList(o.skins.unlocked);
-            s.skins.selected = typeof o.skins.selected === "string" ? o.skins.selected : s.skins.selected;
+            s.skins.selected =
+              typeof o.skins.selected === "string"
+                ? o.skins.selected
+                : s.skins.selected;
           }
           s.history = sanitizeHistory(o.history);
           if (o.daily && typeof o.daily === "object") {
@@ -365,7 +388,8 @@
       if (lsGet(LEGACY_MUTE) === "1") s.settings.muted = true;
     }
     if (s.daily.best > s.best) s.best = s.daily.best;
-    if (s.skins.unlocked.indexOf(s.skins.selected) < 0) s.skins.selected = SKINS[0].id;
+    if (s.skins.unlocked.indexOf(s.skins.selected) < 0)
+      s.skins.selected = SKINS[0].id;
     refreshUnlocks(s, false);
     return s;
   }
@@ -387,7 +411,7 @@
           sfx: save.settings.sfx,
           music: save.settings.music,
           haptics: save.settings.haptics,
-        })
+        }),
       );
     } catch (e) {}
   }
@@ -528,8 +552,13 @@
     try {
       if (!isHttp()) return false;
       if (isSecure() && navigator.share) return true;
-      if (isSecure() && navigator.clipboard && navigator.clipboard.writeText) return true;
-      if (document.queryCommandSupported && document.queryCommandSupported("copy")) return true;
+      if (isSecure() && navigator.clipboard && navigator.clipboard.writeText)
+        return true;
+      if (
+        document.queryCommandSupported &&
+        document.queryCommandSupported("copy")
+      )
+        return true;
       return typeof document.execCommand === "function";
     } catch (e) {
       return false;
@@ -564,14 +593,11 @@
   let limiter = null;
   let outGain = null;
   let musicDuck = null;
-  let keepAlive = null;
-  let keepGain = null;
   let buffers = {};
   let musicCache = {};
   let musicRaw = {};
   let sfxRaw = {};
   let sfxWarmTimer = 0;
-  let audioPrewarmed = false;
   let musicSrc = null;
   let musicBufKey = "";
   let musicId = 0;
@@ -585,12 +611,15 @@
   let ctxGen = 0;
   let pendingRebuild = false;
   let lastResumeAt = 0;
-  let lastCtxTime = 0;
   let watchdog = 0;
-  let stuckSilent = 0;
   let audioResumes = 0;
   let audioRebuilds = 0;
   let audioGlitches = 0;
+  let earlyCreate = 0;
+  let analyser = null;
+  let analyserFloat = null;
+  let audioNan = 0;
+  let unlockBusy = false;
   let lastMasterTarget = NaN;
   let lastSfxTarget = NaN;
   let lastMusicTarget = NaN;
@@ -617,9 +646,7 @@
       const f = f1 ? f0 + (f1 - f0) * (i / ns) : f0;
       phase += f / rate;
       const env =
-        (i < atk ? i / atk : 1) *
-        envDecay *
-        Math.min(1, (ns - i) / rel);
+        (i < atk ? i / atk : 1) * envDecay * Math.min(1, (ns - i) / rel);
       d[idx] += waveSample(type, phase) * vol * env;
       envDecay *= decayMul;
     }
@@ -638,9 +665,7 @@
       const idx = n0 + i;
       if (idx >= d.length) break;
       const env =
-        (i < atk ? i / atk : 1) *
-        envDecay *
-        Math.min(1, (ns - i) / rel);
+        (i < atk ? i / atk : 1) * envDecay * Math.min(1, (ns - i) / rel);
       d[idx] += waveSample(type, phase) * vol * env;
       phase += step;
       envDecay *= decayMul;
@@ -656,7 +681,13 @@
       d[idx] += (Math.random() * 2 - 1) * vol * Math.pow(1 - u, power);
     }
   }
+  function sanitizeSamples(d) {
+    for (let i = 0; i < d.length; i++) {
+      if (!isFinite(d[i])) d[i] = 0;
+    }
+  }
   function makeBuffer(d, rate) {
+    sanitizeSamples(d);
     const b = AC.createBuffer(1, d.length, rate);
     b.getChannelData(0).set(d);
     return b;
@@ -740,13 +771,24 @@
   };
   const SFX_KINDS = Object.keys(SFX_SPEC);
   function nativeRate() {
-    return Math.min(48000, AC ? AC.sampleRate : 48000);
+    try {
+      if (AC && AC.sampleRate) return Math.min(48000, AC.sampleRate);
+    } catch (e) {}
+    return 44100;
+  }
+  function ctxRunning() {
+    try {
+      return !!(AC && AC.state === "running");
+    } catch (e) {
+      return false;
+    }
   }
   function renderSfxRaw(kind) {
     const spec = SFX_SPEC[kind] || SFX_SPEC.ui;
     const rate = nativeRate();
     const d = new Float32Array(Math.max(1, Math.ceil(spec.dur * rate)));
     spec.build(d, rate);
+    sanitizeSamples(d);
     normalizePeak(d, spec.peak);
     sfxRaw[kind] = { rate: rate, data: d };
     return sfxRaw[kind];
@@ -778,7 +820,7 @@
       sfxWarmTimer = 0;
       if (!AC) return;
       for (let i = 0; i < SFX_KINDS.length; i++) {
-        if (!sfxRaw[SFX_KINDS[i]]) {
+        if (!buffers[SFX_KINDS[i]]) {
           try {
             ensureSfx(SFX_KINDS[i]);
           } catch (e) {}
@@ -793,7 +835,7 @@
     return MODES[mode] ? mode : "classic";
   }
   function shouldPlayMusic() {
-    return hadGesture && !!AC && !!musicGain && save.settings.music > 0;
+    return hadGesture && ctxRunning() && !!musicGain && save.settings.music > 0;
   }
   function createMusicJob(key) {
     const rate = nativeRate();
@@ -828,12 +870,20 @@
       job.beat * 0.9,
       i & 1 ? "triangle" : "sine",
       f,
-      (i & 7) === 0 ? 0.16 : 0.1
+      (i & 7) === 0 ? 0.16 : 0.1,
     );
     if ((i & 1) === 0) {
       const bassI = (i & 7) >> 1;
       const bf = job.root * Math.pow(2, (chord[bassI] - 12) / 12) * 0.5;
-      addMusicTone(job.tmp, job.rate, barT + bassI * job.beat * 2, job.beat * 1.5, "sine", bf, 0.14);
+      addMusicTone(
+        job.tmp,
+        job.rate,
+        barT + bassI * job.beat * 2,
+        job.beat * 1.5,
+        "sine",
+        bf,
+        0.14,
+      );
     }
     job.step++;
     return job.step < 32;
@@ -841,18 +891,22 @@
   function finishMusicJob(job) {
     const loopN = job.loopN;
     const d = new Float32Array(loopN);
-    for (let i = 0; i < loopN; i++) d[i] = job.tmp[i] + job.tmp[i + loopN];
+    const tl = job.tmp.length;
+    for (let i = 0; i < loopN; i++)
+      d[i] = (job.tmp[i] || 0) + (i + loopN < tl ? job.tmp[i + loopN] || 0 : 0);
+    sanitizeSamples(d);
     normalizePeak(d, 0.6);
     musicRaw[job.key] = { rate: job.rate, data: d };
     let b = null;
-    try {
-      b = makeBuffer(d, job.rate);
-    } catch (e) {}
-    if (b) musicCache[job.key] = b;
+    if (AC) {
+      try {
+        b = makeBuffer(d, job.rate);
+      } catch (e) {}
+      if (b) musicCache[job.key] = b;
+    }
     delete musicJobs[job.key];
     if (job.key === activeMusicKey() && shouldPlayMusic()) {
       if (b) startMusicBuffer(job.key, b);
-      else requestMusic(job.key);
     }
     scheduleMusicBackground();
   }
@@ -896,10 +950,6 @@
     musicJobs[job.key] = job;
     const step = function () {
       job.timer = 0;
-      if (job.gen !== ctxGen || !AC) {
-        delete musicJobs[job.key];
-        return;
-      }
       let more = false;
       try {
         more = renderMusicSlice(job);
@@ -920,16 +970,25 @@
     step();
   }
   function requestMusic(key) {
-    if (!AC || musicCache[key] || musicJobs[key]) return;
+    if (musicJobs[key]) return;
+    if (musicCache[key]) return;
+    if (musicRaw[key]) {
+      if (AC) {
+        const b = musicBufferFor(key);
+        if (b && shouldPlayMusic() && key === activeMusicKey())
+          startMusicBuffer(key, b);
+      }
+      return;
+    }
     pumpMusicJob(createMusicJob(key));
   }
   function scheduleMusicBackground() {
-    if (!AC || bgTimer) return;
+    if (bgTimer) return;
     if (Object.keys(musicJobs).length) return;
     const keys = Object.keys(MUSIC_BEAT);
     let key = "";
     for (let i = 0; i < keys.length; i++) {
-      if (!musicRaw[keys[i]]) {
+      if (!musicRaw[keys[i]] && !musicJobs[keys[i]]) {
         key = keys[i];
         break;
       }
@@ -939,10 +998,6 @@
     musicJobs[key] = job;
     const step = function () {
       bgTimer = 0;
-      if (job.gen !== ctxGen || !AC) {
-        delete musicJobs[key];
-        return;
-      }
       let more = false;
       try {
         more = renderMusicSlice(job);
@@ -1027,7 +1082,7 @@
         musicGain.gain.setTargetAtTime(musicT, t, 0.08);
       }
     } catch (e) {}
-    if (hadGesture) ensureMusic();
+    if (hadGesture && ctxRunning()) ensureMusic();
   }
   function resetMusicDuck() {
     if (!AC || !musicDuck) return;
@@ -1054,10 +1109,15 @@
     } catch (e) {}
   }
   function healMusic() {
-    if (!hadGesture || !AC || muted || document.hidden) return;
+    if (!hadGesture || !ctxRunning() || muted || document.hidden) return;
     if (!shouldPlayMusic()) return;
     try {
-      if (musicDuck && lastSfxDuckAt >= 0 && AC.currentTime - lastSfxDuckAt > 0.6) resetMusicDuck();
+      if (
+        musicDuck &&
+        lastSfxDuckAt >= 0 &&
+        AC.currentTime - lastSfxDuckAt > 0.6
+      )
+        resetMusicDuck();
     } catch (e) {}
     const key = activeMusicKey();
     let ended = !musicSrc || musicBufKey !== key;
@@ -1150,40 +1210,16 @@
   function teardownGraph() {
     stopMusic();
     releaseAllVoices();
-    if (bgTimer) {
-      try {
-        clearTimeout(bgTimer);
-      } catch (e) {}
-      bgTimer = 0;
-    }
     if (sfxWarmTimer) {
       try {
         clearTimeout(sfxWarmTimer);
       } catch (e) {}
       sfxWarmTimer = 0;
     }
-    const jobs = musicJobs;
-    musicJobs = {};
-    for (const k in jobs) {
-      if (jobs[k] && jobs[k].timer) {
-        try {
-          clearTimeout(jobs[k].timer);
-        } catch (e) {}
-      }
-    }
     lastSfxDuckAt = -1;
     lastMasterTarget = NaN;
     lastSfxTarget = NaN;
     lastMusicTarget = NaN;
-    try {
-      if (keepAlive) keepAlive.stop();
-    } catch (e) {}
-    try {
-      if (keepAlive) keepAlive.disconnect();
-    } catch (e) {}
-    try {
-      if (keepGain) keepGain.disconnect();
-    } catch (e) {}
     try {
       if (musicDuck) musicDuck.disconnect();
     } catch (e) {}
@@ -1202,43 +1238,26 @@
     try {
       if (outGain) outGain.disconnect();
     } catch (e) {}
-    keepAlive = null;
-    keepGain = null;
+    try {
+      if (analyser) analyser.disconnect();
+    } catch (e) {}
     masterGain = null;
     sfxGain = null;
     musicGain = null;
     musicDuck = null;
     limiter = null;
     outGain = null;
+    analyser = null;
+    analyserFloat = null;
     buffers = {};
     musicCache = {};
     musicSrc = null;
     musicBufKey = "";
   }
-  function startKeepAlive() {
-    if (!AC || keepAlive || !masterGain) return;
-    try {
-      const n = Math.max(256, Math.floor(AC.sampleRate * 0.5));
-      const b = AC.createBuffer(1, n, AC.sampleRate);
-      const d = b.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      keepGain = AC.createGain();
-      keepGain.gain.value = 0.00032;
-      keepGain.connect(masterGain);
-      keepAlive = AC.createBufferSource();
-      keepAlive.buffer = b;
-      keepAlive.loop = true;
-      keepAlive.connect(keepGain);
-      keepAlive.start(0);
-    } catch (e) {
-      keepAlive = null;
-      keepGain = null;
-    }
-  }
   function resumeContext() {
     if (!AC) return;
     const now = Date.now();
-    if (now - lastResumeAt < 250) return;
+    if (now - lastResumeAt < 1000) return;
     try {
       const s = AC.state;
       if (s === "closed") {
@@ -1253,7 +1272,13 @@
     } catch (e) {}
   }
   function buildContext() {
-    if (AC && AC.state !== "closed") return AC;
+    if (!hadGesture) {
+      earlyCreate++;
+      return null;
+    }
+    try {
+      if (AC && AC.state !== "closed") return AC;
+    } catch (e) {}
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return null;
@@ -1282,7 +1307,15 @@
       musicDuck.connect(masterGain);
       masterGain.connect(limiter);
       limiter.connect(outGain);
-      outGain.connect(AC.destination);
+      if (DEBUG_HOOK) {
+        analyser = AC.createAnalyser();
+        analyser.fftSize = 256;
+        analyserFloat = new Float32Array(analyser.fftSize);
+        outGain.connect(analyser);
+        analyser.connect(AC.destination);
+      } else {
+        outGain.connect(AC.destination);
+      }
       buffers = {};
       musicCache = {};
       const gen = ++ctxGen;
@@ -1291,8 +1324,6 @@
           onCtxState(gen);
         };
       } catch (e) {}
-      lastCtxTime = AC.currentTime;
-      startKeepAlive();
       warmSynth();
       return AC;
     } catch (e) {
@@ -1306,7 +1337,12 @@
     try {
       const s = AC.state;
       if (s === "running") {
-        lastCtxTime = AC.currentTime;
+        if (hadGesture) {
+          warmSfx(["jump", "ui"]);
+          warmSfxBackground();
+          applyGain();
+          ensureMusic();
+        }
       } else if (s === "closed") {
         pendingRebuild = true;
         audioGlitches++;
@@ -1316,9 +1352,15 @@
     } catch (e) {}
   }
   function rebuildAudio() {
+    if (!hadGesture) return false;
+    let closed = false;
     try {
-      if (AC && AC.state !== "closed") return false;
-    } catch (e) {}
+      closed = !AC || AC.state === "closed";
+    } catch (e) {
+      closed = true;
+    }
+    if (!closed && !pendingRebuild) return false;
+    if (!closed) return false;
     const old = AC;
     AC = null;
     ctxGen++;
@@ -1326,7 +1368,6 @@
       if (old) old.onstatechange = null;
     } catch (e) {}
     teardownGraph();
-    lastCtxTime = 0;
     pendingRebuild = false;
     try {
       if (buildContext()) {
@@ -1335,11 +1376,20 @@
         warmSfx(["jump", "ui"]);
         warmSfxBackground();
         applyGain();
-        ensureMusic();
+        if (ctxRunning()) ensureMusic();
         return true;
       }
     } catch (e) {}
     return false;
+  }
+  function sampleNan() {
+    if (!DEBUG_HOOK || !analyser || !analyserFloat) return;
+    try {
+      analyser.getFloatTimeDomainData(analyserFloat);
+      for (let i = 0; i < analyserFloat.length; i++) {
+        if (!isFinite(analyserFloat[i])) audioNan++;
+      }
+    } catch (e) {}
   }
   function watchdogTick() {
     if (!hadGesture || !AC) return;
@@ -1354,20 +1404,8 @@
         return;
       }
       if (s === "running") {
-        const t = AC.currentTime;
-        if (t > lastCtxTime + 0.02) {
-          lastCtxTime = t;
-          stuckSilent = 0;
-        } else if (!document.hidden && !muted && save.settings.music > 0) {
-          stuckSilent++;
-          if (stuckSilent >= 2) {
-            stuckSilent = 0;
-            resumeContext();
-            pendingRebuild = true;
-            audioGlitches++;
-          }
-        }
         if (!document.hidden && !muted && save.settings.music > 0) healMusic();
+        if (DEBUG_HOOK) sampleNan();
       }
     } catch (e) {}
   }
@@ -1382,58 +1420,99 @@
       pendingRebuild = true;
       return null;
     }
-    resumeContext();
+    if (!ctxRunning()) return null;
     return AC;
   }
   function unlockAudio(realGesture) {
     const isGesture = realGesture !== false;
-    const wasGesture = hadGesture;
-    if (isGesture) hadGesture = true;
-    if (!hadGesture) return;
-    let rebuilt = false;
-    if (isGesture) {
+    if (!isGesture) {
+      if (hadGesture) resumeContext();
+      return;
+    }
+    if (unlockBusy) return;
+    unlockBusy = true;
+    try {
+      const now = Date.now();
+      const wasGesture = hadGesture;
+      hadGesture = true;
       let closed = false;
       try {
         closed = !!(AC && AC.state === "closed");
       } catch (e) {
         closed = !!AC;
       }
-      if (pendingRebuild || closed) rebuilt = rebuildAudio();
-    }
-    if (!AC) {
-      if (!isGesture) return;
-      buildContext();
-    }
-    if (!AC) return;
-    resumeContext();
-    startKeepAlive();
-    if (!wasGesture || rebuilt) {
-      warmSfx(["jump", "ui"]);
-      warmSfxBackground();
-      applyGain();
-      ensureMusic();
-    } else {
-      healMusic();
+      let rebuilt = false;
+      if (AC && (pendingRebuild || closed)) rebuilt = rebuildAudio();
+      if (!AC) buildContext();
+      if (!AC) return;
+      function afterRunning() {
+        if (!ctxRunning()) return;
+        if (!wasGesture || rebuilt) {
+          warmSfx(["jump", "ui"]);
+          warmSfxBackground();
+          applyGain();
+          ensureMusic();
+        } else {
+          healMusic();
+        }
+      }
+      try {
+        if (!ctxRunning()) {
+          lastResumeAt = 0;
+          audioResumes++;
+          const p = AC.resume();
+          lastResumeAt = now;
+          if (p && p.then) p.then(afterRunning).catch(function () {});
+          else afterRunning();
+        } else {
+          afterRunning();
+        }
+      } catch (e) {
+        afterRunning();
+      }
+    } finally {
+      unlockBusy = false;
     }
   }
   function sfx(kind) {
     if (muted || save.settings.sfx <= 0) return;
-    if (!hadGesture || !AC) return;
+    if (!hadGesture || !ctxRunning()) return;
     const buf = ensureSfx(kind) || ensureSfx("ui");
     if (!buf) return;
     const gain = kind === "hit" ? 0.95 : kind === "jump" ? 0.9 : 0.85;
     playSfx(kind, buf, gain);
   }
-  function markGesture() {
+  function activatingKey(e) {
+    if (!e) return false;
+    const k = e.code || e.key;
+    if (k === "Escape" || e.key === "Escape") return false;
+    return true;
+  }
+  function markGesture(e) {
+    if (e && e.type === "keydown" && !activatingKey(e)) return;
     unlockAudio(true);
-    healMusic();
   }
   try {
-    document.addEventListener("pointerdown", markGesture, { capture: true, passive: true });
-    document.addEventListener("touchstart", markGesture, { capture: true, passive: true });
+    document.addEventListener("pointerup", markGesture, {
+      capture: true,
+      passive: true,
+    });
+    document.addEventListener("touchend", markGesture, {
+      capture: true,
+      passive: true,
+    });
+    document.addEventListener("click", markGesture, {
+      capture: true,
+      passive: true,
+    });
+    document.addEventListener("mousedown", markGesture, {
+      capture: true,
+      passive: true,
+    });
     document.addEventListener("keydown", markGesture, { capture: true });
   } catch (e) {}
-  if (typeof setInterval === "function") watchdog = setInterval(watchdogTick, 2000);
+  if (typeof setInterval === "function")
+    watchdog = setInterval(watchdogTick, 2000);
 
   function rumble(pat) {
     if (!save.settings.haptics || reduce) return;
@@ -1443,7 +1522,9 @@
   }
 
   function cssPx(name) {
-    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const v = getComputedStyle(document.documentElement)
+      .getPropertyValue(name)
+      .trim();
     const n = parseFloat(v);
     return isFinite(n) ? n : 0;
   }
@@ -1751,7 +1832,7 @@
     let minGap = Math.max(
       birdH * 3.15,
       play * (practice ? 0.3 - ease * 0.025 : 0.24 - ease * 0.03),
-      (practice ? 126 : 108 - ease * 6) * U
+      (practice ? 126 : 108 - ease * 6) * U,
     );
     let maxGap = Math.min(play * (practice ? 0.46 : 0.4), minGap + 32 * U);
     if (maxGap < minGap) maxGap = minGap;
@@ -1912,13 +1993,12 @@
       bird.y + bird.s * 0.15,
       quality === 0 ? 4 : 7,
       ["#fff", "#F8E08A", "#E8D5A3"],
-      2.6 * U
+      2.6 * U,
     );
     sfx("jump");
     rumble(8);
   }
   function flap() {
-    unlockAudio();
     if (st === "ready") {
       changeState("play");
       if (!pipes.length) spawnPipe(1);
@@ -1944,7 +2024,8 @@
     sfx("ui");
   }
   function cycleMusic() {
-    save.settings.music = save.settings.music < 0.2 ? 0.4 : save.settings.music < 0.7 ? 1 : 0;
+    save.settings.music =
+      save.settings.music < 0.2 ? 0.4 : save.settings.music < 0.7 ? 1 : 0;
     scheduleSave();
     applyGain();
     layoutUI();
@@ -1969,7 +2050,9 @@
     changeState("ready");
     scheduleSave();
     sfx("ui");
-    toast(m === "daily" ? "DAILY CHALLENGE " + dayKey() : m.toUpperCase() + " MODE");
+    toast(
+      m === "daily" ? "DAILY CHALLENGE " + dayKey() : m.toUpperCase() + " MODE",
+    );
     say(m === "daily" ? "Daily challenge " + dayKey() + "." : m + " mode.");
   }
   function selectSkin(id) {
@@ -2059,7 +2142,12 @@
       toast("SHARING UNAVAILABLE");
       return;
     }
-    const label = mode === "daily" ? "Daily Challenge" : mode === "practice" ? "Practice" : "Classic";
+    const label =
+      mode === "daily"
+        ? "Daily Challenge"
+        : mode === "practice"
+          ? "Practice"
+          : "Classic";
     const text =
       "FLAP - " +
       label +
@@ -2082,7 +2170,8 @@
         const data = { title: "FLAP", text: text, url: url };
         let ok = true;
         try {
-          if (typeof navigator.canShare === "function") ok = !!navigator.canShare(data);
+          if (typeof navigator.canShare === "function")
+            ok = !!navigator.canShare(data);
         } catch (e) {
           ok = false;
         }
@@ -2116,13 +2205,20 @@
       bird.y,
       quality === 0 ? 12 : 22,
       ["#F8D64E", "#F5A623", "#fff", "#E24B4B", "#FFD87A"],
-      5.2 * U
+      5.2 * U,
     );
     sfx("hit");
     finishRun();
     refreshUnlocks(save, true);
     if (newBestRun || dailyNewBest) {
-      if (!reduce) burst(W / 2, Math.min(H * 0.32, 160 * U), 18, ["#F8D64E", "#fff", "#8C7BFF"], 4.5 * U);
+      if (!reduce)
+        burst(
+          W / 2,
+          Math.min(H * 0.32, 160 * U),
+          18,
+          ["#F8D64E", "#fff", "#8C7BFF"],
+          4.5 * U,
+        );
       sfx("best");
     }
     say(
@@ -2132,7 +2228,7 @@
         best +
         ". " +
         (newBestRun || dailyNewBest ? "New best. " : "") +
-        "Tap retry."
+        "Tap retry.",
     );
     rumble([18, 30, 40]);
     flushSave();
@@ -2231,7 +2327,10 @@
       return;
     }
     const practice = mode === "practice";
-    spd = (BASE + Math.min(score, 50) * (practice ? 0.034 : 0.048)) * U * (practice ? 0.86 : 1);
+    spd =
+      (BASE + Math.min(score, 50) * (practice ? 0.034 : 0.048)) *
+      U *
+      (practice ? 0.86 : 1);
     const spacing = Math.max(210 * U, 248 * U);
     if (!pipes.length || pipes[pipes.length - 1].x < W - spacing) spawnPipe(0);
     const hw = b.s * 0.33;
@@ -2327,15 +2426,35 @@
   };
 
   function pushBtn(arr, id, x, y, w, h, label, tone) {
-    arr.push({ id: id, x: x, y: y, w: w, h: h, label: label, tone: tone || "dark" });
+    arr.push({
+      id: id,
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      label: label,
+      tone: tone || "dark",
+    });
   }
   function panelGeom(kind) {
     const pw = Math.min(W - 24 - SAL - SAR, Math.max(300, 340 * UI));
     const maxH = H - SAT - SAB - 12;
     const minH =
-      kind === "pause" ? 330 : kind === "history" ? 330 : kind === "over" ? 285 : 270;
+      kind === "pause"
+        ? 330
+        : kind === "history"
+          ? 330
+          : kind === "over"
+            ? 285
+            : 270;
     const wantH =
-      kind === "pause" ? 360 * UI : kind === "history" ? 350 * UI : kind === "over" ? 305 * UI : 285 * UI;
+      kind === "pause"
+        ? 360 * UI
+        : kind === "history"
+          ? 350 * UI
+          : kind === "over"
+            ? 305 * UI
+            : 285 * UI;
     const ph = Math.min(maxH, Math.max(minH, wantH));
     const x = (W - pw) / 2;
     const y = Math.max(SAT + 6, Math.min((H - ph) / 2, H - ph - SAB - 6));
@@ -2354,7 +2473,8 @@
     ui.panelCard = null;
     const hs = Math.max(44, 44 * UI);
     const top = SAT + 8 * UI;
-    if (st === "play" || st === "paused") pushBtn(ui.hud, "pause", 12 * UI + SAL, top, hs, hs, "", "icon");
+    if (st === "play" || st === "paused")
+      pushBtn(ui.hud, "pause", 12 * UI + SAL, top, hs, hs, "", "icon");
     let rx = W - SAR - 12 * UI - hs;
     pushBtn(ui.hud, "mute", rx, top, hs, hs, "", "icon");
     rx -= hs + 8 * UI;
@@ -2382,7 +2502,7 @@
         modeW,
         modeH,
         labels[i],
-        modes[i] === mode ? "accent" : "dark"
+        modes[i] === mode ? "accent" : "dark",
       );
     const tile = Math.max(44, 42 * UI);
     const gap = Math.max(6, 8 * UI);
@@ -2390,7 +2510,16 @@
     const skinY = Math.min(modeY + modeH + 18 * UI, H - GH - tile - 42 * UI);
     const skinX = cx - skinTotal / 2;
     for (let i = 0; i < SKIN_COUNT; i++)
-      pushBtn(ui.readySkins, "skin:" + SKINS[i].id, skinX + i * (tile + gap), skinY, tile, tile, "", "skin");
+      pushBtn(
+        ui.readySkins,
+        "skin:" + SKINS[i].id,
+        skinX + i * (tile + gap),
+        skinY,
+        tile,
+        tile,
+        "",
+        "skin",
+      );
     const promptY = Math.min(H - GH - 52 * UI, skinY + tile + 54 * UI);
     ui.readyTitleY = titleY;
     ui.readyModeY = modeY;
@@ -2414,18 +2543,54 @@
     const bh = 44;
     const retryY = cy + 2;
     ui.overRetry = retryY;
-    pushBtn(ui.over, "retry", cc.x + pad, retryY, cc.w - pad * 2, bh, "RETRY", "primary");
+    pushBtn(
+      ui.over,
+      "retry",
+      cc.x + pad,
+      retryY,
+      cc.w - pad * 2,
+      bh,
+      "RETRY",
+      "primary",
+    );
     const rowGap = Math.max(5, 6 * UI);
     const r1 = retryY + bh + rowGap;
     const r2 = r1 + bh + rowGap;
     const bw = (cc.w - pad * 2 - rowGap) / 2;
     pushBtn(ui.over, "skins", cc.x + pad, r1, bw, bh, "SKINS", "dark");
-    pushBtn(ui.over, "history", cc.x + pad + bw + rowGap, r1, bw, bh, "TOP 10", "dark");
+    pushBtn(
+      ui.over,
+      "history",
+      cc.x + pad + bw + rowGap,
+      r1,
+      bw,
+      bh,
+      "TOP 10",
+      "dark",
+    );
     if (shareSupported) {
       pushBtn(ui.over, "share", cc.x + pad, r2, bw, bh, "SHARE", "blue");
-      pushBtn(ui.over, "menu", cc.x + pad + bw + rowGap, r2, bw, bh, "MENU", "dark");
+      pushBtn(
+        ui.over,
+        "menu",
+        cc.x + pad + bw + rowGap,
+        r2,
+        bw,
+        bh,
+        "MENU",
+        "dark",
+      );
     } else {
-      pushBtn(ui.over, "menu", cc.x + pad, r2, cc.w - pad * 2, bh, "MENU", "dark");
+      pushBtn(
+        ui.over,
+        "menu",
+        cc.x + pad,
+        r2,
+        cc.w - pad * 2,
+        bh,
+        "MENU",
+        "dark",
+      );
     }
 
     const pc = panelGeom("pause");
@@ -2436,19 +2601,62 @@
     const pTitle = Math.min(26 * UI, 24);
     py += pTitle + 8;
     py += 14 * UI + 8;
-    pushBtn(ui.pause, "resume", pc.x + pPad, py, pc.w - pPad * 2, pBh, "RESUME", "primary");
+    pushBtn(
+      ui.pause,
+      "resume",
+      pc.x + pPad,
+      py,
+      pc.w - pPad * 2,
+      pBh,
+      "RESUME",
+      "primary",
+    );
     py += pBh + Math.max(5, 6 * UI);
     const pGap = Math.max(5, 6 * UI);
     const pBw = (pc.w - pPad * 2 - pGap) / 2;
     const pRows = [
       ["restart", "RESTART", "skins", "SKINS"],
       ["history", "TOP 10", "menu", "MENU"],
-      ["mute", muted ? "SOUND: OFF" : "SOUND: ON", "music", save.settings.music <= 0 ? "MUSIC: OFF" : save.settings.music < 0.7 ? "MUSIC: LOW" : "MUSIC: HIGH"],
-      ["haptics", save.settings.haptics ? "HAPTICS: ON" : "HAPTICS: OFF", "fs", fsSupported ? (isFullscreen() ? "WINDOWED" : "FULLSCREEN") : "", ""],
+      [
+        "mute",
+        muted ? "SOUND: OFF" : "SOUND: ON",
+        "music",
+        save.settings.music <= 0
+          ? "MUSIC: OFF"
+          : save.settings.music < 0.7
+            ? "MUSIC: LOW"
+            : "MUSIC: HIGH",
+      ],
+      [
+        "haptics",
+        save.settings.haptics ? "HAPTICS: ON" : "HAPTICS: OFF",
+        "fs",
+        fsSupported ? (isFullscreen() ? "WINDOWED" : "FULLSCREEN") : "",
+        "",
+      ],
     ];
     for (let r = 0; r < pRows.length; r++) {
-      pushBtn(ui.pause, pRows[r][0], pc.x + pPad, py, pBw, pBh, pRows[r][1], "dark");
-      if (pRows[r][3]) pushBtn(ui.pause, pRows[r][2], pc.x + pPad + pBw + pGap, py, pBw, pBh, pRows[r][3], "dark");
+      pushBtn(
+        ui.pause,
+        pRows[r][0],
+        pc.x + pPad,
+        py,
+        pBw,
+        pBh,
+        pRows[r][1],
+        "dark",
+      );
+      if (pRows[r][3])
+        pushBtn(
+          ui.pause,
+          pRows[r][2],
+          pc.x + pPad + pBw + pGap,
+          py,
+          pBw,
+          pBh,
+          pRows[r][3],
+          "dark",
+        );
       py += pBh + pGap;
     }
 
@@ -2456,20 +2664,50 @@
       const sc = panelGeom("skins");
       ui.panelCard = sc;
       const sPad = Math.max(12, 16 * UI);
-      const tileW = Math.min(60, (sc.w - sPad * 2 - 4 * Math.max(4, 6 * UI)) / SKIN_COUNT);
+      const tileW = Math.min(
+        60,
+        (sc.w - sPad * 2 - 4 * Math.max(4, 6 * UI)) / SKIN_COUNT,
+      );
       const tileH = Math.max(52, 58 * UI);
       const sGap = Math.max(4, 6 * UI);
       const total = SKIN_COUNT * tileW + (SKIN_COUNT - 1) * sGap;
       const sx = sc.x + (sc.w - total) / 2;
       const sy = sc.y + Math.max(52, 64 * UI);
       for (let i = 0; i < SKIN_COUNT; i++)
-        pushBtn(ui.panel, "pick:" + SKINS[i].id, sx + i * (tileW + sGap), sy, tileW, tileH, "", "skin");
-      pushBtn(ui.panel, "close", sc.x + sPad, sc.y + sc.h - sPad - 44, sc.w - sPad * 2, 44, "BACK", "dark");
+        pushBtn(
+          ui.panel,
+          "pick:" + SKINS[i].id,
+          sx + i * (tileW + sGap),
+          sy,
+          tileW,
+          tileH,
+          "",
+          "skin",
+        );
+      pushBtn(
+        ui.panel,
+        "close",
+        sc.x + sPad,
+        sc.y + sc.h - sPad - 44,
+        sc.w - sPad * 2,
+        44,
+        "BACK",
+        "dark",
+      );
     } else if (panel === "history") {
       const hc = panelGeom("history");
       ui.panelCard = hc;
       const hPad = Math.max(12, 16 * UI);
-      pushBtn(ui.panel, "close", hc.x + hPad, hc.y + hc.h - hPad - 44, hc.w - hPad * 2, 44, "BACK", "dark");
+      pushBtn(
+        ui.panel,
+        "close",
+        hc.x + hPad,
+        hc.y + hc.h - hPad - 44,
+        hc.w - hPad * 2,
+        44,
+        "BACK",
+        "dark",
+      );
     }
   }
 
@@ -2649,7 +2887,9 @@
     X.beginPath();
     X.ellipse(2 * U, s * 0.28, s * 0.42, s * 0.18, 0, 0, 7);
     X.fill();
-    const wing = reduce ? -0.2 : -0.55 + Math.sin(worldTime * 20) * 0.55 * (0.35 + b.wing * 1.4);
+    const wing = reduce
+      ? -0.2
+      : -0.55 + Math.sin(worldTime * 20) * 0.55 * (0.35 + b.wing * 1.4);
     X.save();
     X.translate(-s * 0.08, s * 0.04);
     X.rotate(wing);
@@ -2712,7 +2952,13 @@
     const blue = b.tone === "blue";
     const skin = b.tone === "skin";
     if (skin) return drawSkinTile(b);
-    const bg = accent ? "#F8D64E" : primary ? "#2E7D32" : blue ? "#2C6E9B" : "#2E2413";
+    const bg = accent
+      ? "#F8D64E"
+      : primary
+        ? "#2E7D32"
+        : blue
+          ? "#2C6E9B"
+          : "#2E2413";
     const fg = accent ? "#2A1A0A" : "#FFF7E0";
     roundRect(X, b.x, b.y, b.w, b.h, Math.min(12, b.h * 0.28));
     X.fillStyle = bg;
@@ -2722,7 +2968,15 @@
       X.lineWidth = 3;
       X.stroke();
     }
-    text(b.label, b.x + b.w / 2, b.y + b.h / 2, Math.min(15 * UI, b.h * 0.36), fg, accent ? null : "rgba(0,0,0,0.3)", 2);
+    text(
+      b.label,
+      b.x + b.w / 2,
+      b.y + b.h / 2,
+      Math.min(15 * UI, b.h * 0.36),
+      fg,
+      accent ? null : "rgba(0,0,0,0.3)",
+      2,
+    );
   }
   function drawSkinTile(b) {
     const sk = skinById(b.id.slice(b.id.indexOf(":") + 1));
@@ -2739,10 +2993,22 @@
     const iconS = Math.min(b.w, b.h) * 0.52;
     drawBirdIcon(b.x + b.w / 2, b.y + b.h * 0.42, iconS, sk, !unlocked);
     if (unlocked) {
-      text(sk.name, b.x + b.w / 2, b.y + b.h * 0.82, Math.max(8, Math.min(10 * UI, b.w * 0.18)), selected ? "#2A1A0A" : "#FFF7E0");
+      text(
+        sk.name,
+        b.x + b.w / 2,
+        b.y + b.h * 0.82,
+        Math.max(8, Math.min(10 * UI, b.w * 0.18)),
+        selected ? "#2A1A0A" : "#FFF7E0",
+      );
     } else {
       drawLock(b.x + b.w * 0.72, b.y + b.h * 0.3, Math.min(b.w, b.h) * 0.28);
-      text(String(sk.need), b.x + b.w / 2, b.y + b.h * 0.82, Math.max(8, Math.min(10 * UI, b.w * 0.2)), "#FFF7E0");
+      text(
+        String(sk.need),
+        b.x + b.w / 2,
+        b.y + b.h * 0.82,
+        Math.max(8, Math.min(10 * UI, b.w * 0.2)),
+        "#FFF7E0",
+      );
     }
   }
   function drawIcon(b) {
@@ -2830,7 +3096,15 @@
     const cx = W / 2;
     const titleSize = Math.min(72 * U, W * 0.24, 82);
     X.globalAlpha = intro;
-    text("FLAP", cx, ui.readyTitleY - (1 - intro) * 24, titleSize, "#FFF7E0", "#2A1A0A", 9);
+    text(
+      "FLAP",
+      cx,
+      ui.readyTitleY - (1 - intro) * 24,
+      titleSize,
+      "#FFF7E0",
+      "#2A1A0A",
+      9,
+    );
     X.globalAlpha = 1;
     const modeLabel =
       mode === "daily"
@@ -2838,17 +3112,54 @@
         : mode === "practice"
           ? "PRACTICE - NO RECORDS"
           : "CLASSIC";
-    text(modeLabel, cx, ui.readyModeY - 16 * UI, Math.max(10, 11 * UI), "#FFF7E0", "#2A1A0A", 3);
+    text(
+      modeLabel,
+      cx,
+      ui.readyModeY - 16 * UI,
+      Math.max(10, 11 * UI),
+      "#FFF7E0",
+      "#2A1A0A",
+      3,
+    );
     for (let i = 0; i < ui.readyModes.length; i++) drawButton(ui.readyModes[i]);
-    text("SKINS", cx, ui.readySkinY - 10 * UI, Math.max(9, 10 * UI), "#FFF7E0", "#2A1A0A", 2);
+    text(
+      "SKINS",
+      cx,
+      ui.readySkinY - 10 * UI,
+      Math.max(9, 10 * UI),
+      "#FFF7E0",
+      "#2A1A0A",
+      2,
+    );
     for (let i = 0; i < ui.readySkins.length; i++) drawButton(ui.readySkins[i]);
     const pulse = reduce ? 1 : 0.9 + Math.sin(now * 0.005) * 0.1;
     X.globalAlpha = pulse;
-    text("TAP TO FLY", cx, ui.readyPromptY, Math.min(24 * UI, 28), "#FFF7E0", "#2A1A0A", 6);
+    text(
+      "TAP TO FLY",
+      cx,
+      ui.readyPromptY,
+      Math.min(24 * UI, 28),
+      "#FFF7E0",
+      "#2A1A0A",
+      6,
+    );
     X.globalAlpha = 1;
     const statLine =
-      "BEST " + best + "   RUNS " + save.stats.runs + "   FLAPS " + save.stats.flaps;
-    text(statLine, cx, ui.readyStatsY, Math.max(10, 10.5 * UI), "#FFF7E0", "#2A1A0A", 3);
+      "BEST " +
+      best +
+      "   RUNS " +
+      save.stats.runs +
+      "   FLAPS " +
+      save.stats.flaps;
+    text(
+      statLine,
+      cx,
+      ui.readyStatsY,
+      Math.max(10, 10.5 * UI),
+      "#FFF7E0",
+      "#2A1A0A",
+      3,
+    );
     if (mode === "daily")
       text(
         "TODAY'S BEST " + save.daily.best,
@@ -2857,7 +3168,7 @@
         Math.max(10, 11 * UI),
         "#FFE99A",
         "#2A1A0A",
-        3
+        3,
       );
     if (!save.tutorialSeen) {
       const ringY = bird ? bird.y : ui.readyPromptY;
@@ -2866,10 +3177,24 @@
       X.strokeStyle = "#FFF7E0";
       X.lineWidth = 3;
       X.beginPath();
-      X.arc(bird ? bird.x : cx, ringY, (34 + (reduce ? 0 : Math.sin(now * 0.006) * 5)) * U, 0, 7);
+      X.arc(
+        bird ? bird.x : cx,
+        ringY,
+        (34 + (reduce ? 0 : Math.sin(now * 0.006) * 5)) * U,
+        0,
+        7,
+      );
       X.stroke();
       X.globalAlpha = 1;
-      text("TAP ANYWHERE", bird ? bird.x : cx, ringY - 50 * U, Math.max(10, 12 * UI), "#FFF7E0", "#2A1A0A", 3);
+      text(
+        "TAP ANYWHERE",
+        bird ? bird.x : cx,
+        ringY - 50 * U,
+        Math.max(10, 12 * UI),
+        "#FFF7E0",
+        "#2A1A0A",
+        3,
+      );
     }
   }
   function drawOver(now) {
@@ -2895,8 +3220,18 @@
     const pad = Math.max(12, 16 * UI);
     const cx = cc.x + cc.w / 2;
     const titleSize = Math.min(28 * UI, 26);
-    text("GAME OVER", cx, cc.y + pad + titleSize * 0.55, titleSize, "#2A1A0A", "#FFF7E0", 5);
-    const countT = reduce ? 1 : easeOutCubic(Math.min(1, (now - stateAt) / 680));
+    text(
+      "GAME OVER",
+      cx,
+      cc.y + pad + titleSize * 0.55,
+      titleSize,
+      "#2A1A0A",
+      "#FFF7E0",
+      5,
+    );
+    const countT = reduce
+      ? 1
+      : easeOutCubic(Math.min(1, (now - stateAt) / 680));
     const shown = Math.round(score * countT);
     shownScore = shown;
     const scoreSize = Math.min(40 * UI, 38);
@@ -2905,8 +3240,24 @@
     const labelY = cc.y + pad + titleSize + 12 * UI;
     text("SCORE", colL, labelY, Math.max(9, 10 * UI), "#7A6A40");
     text("BEST", colR, labelY, Math.max(9, 10 * UI), "#7A6A40");
-    text(String(shown), colL, labelY + scoreSize * 0.72, scoreSize, "#C4382F", "#FFF7E0", 5);
-    text(String(best), colR, labelY + scoreSize * 0.72, scoreSize, "#8A6208", "#FFF7E0", 5);
+    text(
+      String(shown),
+      colL,
+      labelY + scoreSize * 0.72,
+      scoreSize,
+      "#C4382F",
+      "#FFF7E0",
+      5,
+    );
+    text(
+      String(best),
+      colR,
+      labelY + scoreSize * 0.72,
+      scoreSize,
+      "#8A6208",
+      "#FFF7E0",
+      5,
+    );
     const badgeY = labelY + scoreSize * 0.72 + 22 * UI;
     if (newBestRun || dailyNewBest) {
       const bp = reduce ? 1 : 0.94 + Math.sin(now * 0.009) * 0.06;
@@ -2919,20 +3270,43 @@
       X.strokeStyle = "#8A6208";
       X.lineWidth = 2;
       X.stroke();
-      text(dailyNewBest && !newBestRun ? "NEW DAILY BEST" : "NEW BEST", 0, 0, Math.max(10, 11 * UI), "#2A1A0A");
+      text(
+        dailyNewBest && !newBestRun ? "NEW DAILY BEST" : "NEW BEST",
+        0,
+        0,
+        Math.max(10, 11 * UI),
+        "#2A1A0A",
+      );
       X.restore();
     } else if (mode === "daily") {
-      text("DAILY BEST " + save.daily.best, cx, badgeY, Math.max(10, 10.5 * UI), "#7A6A40");
+      text(
+        "DAILY BEST " + save.daily.best,
+        cx,
+        badgeY,
+        Math.max(10, 10.5 * UI),
+        "#7A6A40",
+      );
     } else if (mode === "practice") {
-      text("PRACTICE - NOT RECORDED", cx, badgeY, Math.max(9, 10 * UI), "#7A6A40");
+      text(
+        "PRACTICE - NOT RECORDED",
+        cx,
+        badgeY,
+        Math.max(9, 10 * UI),
+        "#7A6A40",
+      );
     }
     const statsY = badgeY + 18 * UI;
     text(
-      "FLAPS " + runFlaps + "   STREAK " + Math.max(runStreak, score) + "   RUNS " + save.stats.runs,
+      "FLAPS " +
+        runFlaps +
+        "   STREAK " +
+        Math.max(runStreak, score) +
+        "   RUNS " +
+        save.stats.runs,
       cx,
       statsY,
       Math.max(9, 10 * UI),
-      "#5E5034"
+      "#5E5034",
     );
     for (let i = 0; i < ui.over.length; i++) drawButton(ui.over[i]);
     X.restore();
@@ -2955,13 +3329,26 @@
     X.stroke();
     const pad = Math.max(12, 16 * UI);
     const titleSize = Math.min(26 * UI, 24);
-    text("PAUSED", pc.x + pc.w / 2, pc.y + pad + titleSize * 0.6, titleSize, "#2A1A0A", "#FFF7E0", 5);
     text(
-      "SCORE " + score + "   BEST " + best + "   " + (mode === "daily" ? "DAILY" : mode.toUpperCase()),
+      "PAUSED",
+      pc.x + pc.w / 2,
+      pc.y + pad + titleSize * 0.6,
+      titleSize,
+      "#2A1A0A",
+      "#FFF7E0",
+      5,
+    );
+    text(
+      "SCORE " +
+        score +
+        "   BEST " +
+        best +
+        "   " +
+        (mode === "daily" ? "DAILY" : mode.toUpperCase()),
       pc.x + pc.w / 2,
       pc.y + pad + titleSize + 14 * UI,
       Math.max(9, 10.5 * UI),
-      "#7A6A40"
+      "#7A6A40",
     );
     for (let i = 0; i < ui.pause.length; i++) drawButton(ui.pause[i]);
     text(
@@ -2969,7 +3356,7 @@
       pc.x + pc.w / 2,
       pc.y + pc.h - 9 * UI,
       Math.max(8, 9 * UI),
-      "#8A7A50"
+      "#8A7A50",
     );
     X.globalAlpha = 1;
   }
@@ -2988,7 +3375,16 @@
     X.lineWidth = 3;
     X.stroke();
     const pad = Math.max(12, 16 * UI);
-    text("SKINS", sc.x + pad, sc.y + pad + 10, Math.min(24 * UI, 22), "#2A1A0A", "#FFF7E0", 4, "left");
+    text(
+      "SKINS",
+      sc.x + pad,
+      sc.y + pad + 10,
+      Math.min(24 * UI, 22),
+      "#2A1A0A",
+      "#FFF7E0",
+      4,
+      "left",
+    );
     const next = (function () {
       for (let i = 0; i < SKINS.length; i++)
         if (save.skins.unlocked.indexOf(SKINS[i].id) < 0) return SKINS[i];
@@ -3002,7 +3398,13 @@
     const hint = next
       ? "NEXT UNLOCK: " + next.name + " AT BEST " + next.need
       : "ALL SKINS UNLOCKED";
-    text(hint, sc.x + sc.w / 2, sc.y + sc.h - 78 * UI, Math.max(9, 10 * UI), "#7A6A40");
+    text(
+      hint,
+      sc.x + sc.w / 2,
+      sc.y + sc.h - 78 * UI,
+      Math.max(9, 10 * UI),
+      "#7A6A40",
+    );
   }
   function drawHistoryPanel(now) {
     const hc = ui.panelCard;
@@ -3019,13 +3421,28 @@
     X.lineWidth = 3;
     X.stroke();
     const pad = Math.max(12, 16 * UI);
-    text("TOP 10", hc.x + pad, hc.y + pad + 8, Math.min(24 * UI, 22), "#2A1A0A", "#FFF7E0", 4, "left");
+    text(
+      "TOP 10",
+      hc.x + pad,
+      hc.y + pad + 8,
+      Math.min(24 * UI, 22),
+      "#2A1A0A",
+      "#FFF7E0",
+      4,
+      "left",
+    );
     const top = hc.y + pad + 30 * UI;
     const bottom = hc.y + hc.h - pad - 52;
     const rowH = Math.max(14, Math.min(23, (bottom - top) / 10));
     const list = save.history;
     if (!list.length) {
-      text("NO RUNS YET", hc.x + hc.w / 2, top + 30, Math.max(10, 12 * UI), "#7A6A40");
+      text(
+        "NO RUNS YET",
+        hc.x + hc.w / 2,
+        top + 30,
+        Math.max(10, 12 * UI),
+        "#7A6A40",
+      );
     } else {
       for (let i = 0; i < list.length; i++) {
         const e = list[i];
@@ -3035,15 +3452,37 @@
           X.fillRect(hc.x + pad, y - rowH / 2, hc.w - pad * 2, rowH);
         }
         text(String(i + 1), hc.x + pad + 10, y, Math.max(8, 9 * UI), "#7A6A40");
-        text(String(e.s), hc.x + pad + 32 * UI, y, Math.max(10, 11 * UI), "#2A1A0A", null, 0, "left");
         text(
-          e.m === "daily" ? "DAILY" : e.m === "practice" ? "PRACTICE" : "CLASSIC",
+          String(e.s),
+          hc.x + pad + 32 * UI,
+          y,
+          Math.max(10, 11 * UI),
+          "#2A1A0A",
+          null,
+          0,
+          "left",
+        );
+        text(
+          e.m === "daily"
+            ? "DAILY"
+            : e.m === "practice"
+              ? "PRACTICE"
+              : "CLASSIC",
           hc.x + hc.w * 0.53,
           y,
           Math.max(8, 8.5 * UI),
-          "#7A6A40"
+          "#7A6A40",
         );
-        text(e.d.slice(5), hc.x + hc.w - pad - 4, y, Math.max(8, 8.5 * UI), "#7A6A40", null, 0, "right");
+        text(
+          e.d.slice(5),
+          hc.x + hc.w - pad - 4,
+          y,
+          Math.max(8, 8.5 * UI),
+          "#7A6A40",
+          null,
+          0,
+          "right",
+        );
       }
     }
     for (let i = 0; i < ui.panel.length; i++) drawButton(ui.panel[i]);
@@ -3055,10 +3494,24 @@
     X.strokeStyle = "#FFF7E0";
     X.lineWidth = 3;
     X.beginPath();
-    X.arc(bird.x, bird.y, (30 + (reduce ? 0 : Math.sin(now * 0.008) * 5)) * U, 0, 7);
+    X.arc(
+      bird.x,
+      bird.y,
+      (30 + (reduce ? 0 : Math.sin(now * 0.008) * 5)) * U,
+      0,
+      7,
+    );
     X.stroke();
     X.globalAlpha = 1;
-    text("TAP TO FLAP", bird.x, bird.y - 48 * U, Math.max(10, 12 * UI), "#FFF7E0", "#2A1A0A", 3);
+    text(
+      "TAP TO FLAP",
+      bird.x,
+      bird.y - 48 * U,
+      Math.max(10, 12 * UI),
+      "#FFF7E0",
+      "#2A1A0A",
+      3,
+    );
   }
   function drawToast(now) {
     if (now >= toastObj.at || !toastObj.text) return;
@@ -3100,7 +3553,15 @@
       if (newBestRun && st === "play") {
         const p = reduce ? 1 : 0.9 + Math.sin(now * 0.01) * 0.1;
         X.globalAlpha = p;
-        text("NEW BEST", W / 2, top + size * 0.62, Math.max(9, 10 * UI), "#F8D64E", "#2A1A0A", 3);
+        text(
+          "NEW BEST",
+          W / 2,
+          top + size * 0.62,
+          Math.max(9, 10 * UI),
+          "#F8D64E",
+          "#2A1A0A",
+          3,
+        );
         X.globalAlpha = 1;
       }
     }
@@ -3112,6 +3573,7 @@
     drawTutorial(now);
     drawToast(now);
     if (DEBUG_HOOK) {
+      sampleNan();
       const ctxS = AC ? AC.state : "off";
       const mg = musicGain ? Math.round(musicGain.gain.value * 100) / 100 : 0;
       const dk = musicDuck ? Math.round(musicDuck.gain.value * 100) / 100 : 1;
@@ -3128,13 +3590,17 @@
         " r" +
         audioResumes +
         " b" +
-        audioRebuilds;
+        audioRebuilds +
+        " nan:" +
+        audioNan +
+        " e" +
+        earlyCreate;
       text(line, 8 + SAL, H - GH - 10, 10, "#2A1A0A", "#FFF7E0", 2, "left");
     }
     if (!reduce && transAt) {
       const tp = clamp((now - transAt) / 280, 0, 1);
       if (tp < 1) {
-        X.fillStyle = "rgba(112,197,206," + (0.2 * (1 - tp)) + ")";
+        X.fillStyle = "rgba(112,197,206," + 0.2 * (1 - tp) + ")";
         X.fillRect(0, 0, W, H);
       }
     }
@@ -3159,7 +3625,12 @@
     let marked = 0;
     for (let i = 0; i < pipes.length; i++) {
       const p = pipes[i];
-      p.markBest = !marked && mode !== "practice" && best > 0 && !p.hit && score + 1 === best;
+      p.markBest =
+        !marked &&
+        mode !== "practice" &&
+        best > 0 &&
+        !p.hit &&
+        score + 1 === best;
       if (p.markBest) marked = 1;
       drawPipe(p, a);
     }
@@ -3258,8 +3729,8 @@
     const src = e.changedTouches ? e.changedTouches[0] : e;
     const rw = r.width || W || 1;
     const rh = r.height || H || 1;
-    xy[0] = ((src.clientX - r.left) * (W / rw));
-    xy[1] = ((src.clientY - r.top) * (H / rh));
+    xy[0] = (src.clientX - r.left) * (W / rw);
+    xy[1] = (src.clientY - r.top) * (H / rh);
     return xy;
   }
   let lastInput = 0;
@@ -3286,7 +3757,10 @@
       }
     }
     const card = ui.panelCard;
-    if (card && (x < card.x || x > card.x + card.w || y < card.y || y > card.y + card.h)) {
+    if (
+      card &&
+      (x < card.x || x > card.x + card.w || y < card.y || y > card.y + card.h)
+    ) {
       openPanel("");
       return true;
     }
@@ -3316,7 +3790,8 @@
         return true;
       }
       const pc = ui.pauseCard;
-      if (pc && (x < pc.x || x > pc.x + pc.w || y < pc.y || y > pc.y + pc.h)) resume();
+      if (pc && (x < pc.x || x > pc.x + pc.w || y < pc.y || y > pc.y + pc.h))
+        resume();
       return true;
     }
     if (st === "over") {
@@ -3363,7 +3838,6 @@
       if (e.target.closest("button") || e.target.closest(".crash")) return;
     }
     if (e.button != null && e.button > 0) return;
-    unlockAudio();
     const id = e.pointerId;
     if (e.pointerType === "touch") {
       if (id != null) {
@@ -3392,7 +3866,9 @@
     if (
       (k === "Space" || k === "Enter" || e.key === " " || e.key === "Enter") &&
       e.target &&
-      (e.target.tagName === "BUTTON" || e.target.tagName === "A" || e.target.tagName === "INPUT")
+      (e.target.tagName === "BUTTON" ||
+        e.target.tagName === "A" ||
+        e.target.tagName === "INPUT")
     )
       return;
     if (k === "Escape" || k === "KeyP" || e.key === "p" || e.key === "P") {
@@ -3428,7 +3904,13 @@
       restart();
       return;
     }
-    if (k === "Space" || e.key === " " || k === "Enter" || k === "ArrowUp" || e.key === "ArrowUp") {
+    if (
+      k === "Space" ||
+      e.key === " " ||
+      k === "Enter" ||
+      k === "ArrowUp" ||
+      e.key === "ArrowUp"
+    ) {
       e.preventDefault();
       unlockAudio();
       if (!inputGate("key")) return;
@@ -3496,7 +3978,7 @@
     function () {
       setTimeout(onResize, 120);
     },
-    { passive: true }
+    { passive: true },
   );
   if (window.visualViewport) {
     visualViewport.addEventListener("resize", onResize, { passive: true });
@@ -3516,7 +3998,7 @@
     function (e) {
       e.preventDefault();
     },
-    { passive: false }
+    { passive: false },
   );
   addEventListener("gesturestart", function (e) {
     e.preventDefault();
@@ -3526,7 +4008,7 @@
     function (e) {
       e.preventDefault();
     },
-    { passive: false }
+    { passive: false },
   );
   if (C.addEventListener) {
     C.addEventListener("contextlost", function (e) {
@@ -3609,38 +4091,6 @@
       setTimeout(onResize, 30);
     });
 
-  let deferredPrompt = null;
-  const installBtn = document.getElementById("install");
-  try {
-    addEventListener("beforeinstallprompt", function (e) {
-      try {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (installBtn && isHttp()) installBtn.hidden = false;
-      } catch (err) {}
-    });
-    addEventListener("appinstalled", function () {
-      deferredPrompt = null;
-      if (installBtn) installBtn.hidden = true;
-    });
-  } catch (e) {}
-  if (installBtn)
-    installBtn.addEventListener("click", function () {
-      if (!deferredPrompt || !isHttp()) return;
-      try {
-        deferredPrompt.prompt();
-        if (deferredPrompt.userChoice)
-          deferredPrompt.userChoice.then(function () {
-            deferredPrompt = null;
-            installBtn.hidden = true;
-          }).catch(function () {
-            installBtn.hidden = true;
-          });
-      } catch (e) {
-        installBtn.hidden = true;
-      }
-    });
-
   try {
     if ("serviceWorker" in navigator && isHttp()) {
       let wantReload = 0;
@@ -3656,7 +4106,11 @@
             const sw = reg.installing;
             if (!sw) return;
             sw.addEventListener("statechange", function () {
-              if (sw.state === "installed" && navigator.serviceWorker.controller) showUpd();
+              if (
+                sw.state === "installed" &&
+                navigator.serviceWorker.controller
+              )
+                showUpd();
             });
           });
           const upd = document.getElementById("upd");
@@ -3688,18 +4142,20 @@
   transAt = 0;
   layoutUI();
   scheduleSave();
-  say("FLAP. Choose Classic, Daily, or Practice. Tap, click, or press Space to fly.");
+  say(
+    "FLAP. Choose Classic, Daily, or Practice. Tap, click, or press Space to fly.",
+  );
   setTimeout(function () {
-    if (audioPrewarmed || hadGesture || AC) return;
-    audioPrewarmed = true;
-    if (buildContext()) {
-      warmSfx(["jump", "ui"]);
-      warmSfxBackground();
-      const active = activeMusicKey();
-      requestMusic(active);
-      const all = Object.keys(MUSIC_BEAT);
-      for (let i = 0; i < all.length; i++) if (all[i] !== active) requestMusic(all[i]);
-    }
+    if (hadGesture) return;
+    try {
+      renderSfxRaw("jump");
+      renderSfxRaw("ui");
+    } catch (e) {}
+    const active = activeMusicKey();
+    requestMusic(active);
+    const all = Object.keys(MUSIC_BEAT);
+    for (let i = 0; i < all.length; i++)
+      if (all[i] !== active) requestMusic(all[i]);
   }, 0);
   raf = requestAnimationFrame(loop);
 
@@ -3714,103 +4170,120 @@
   if (DEBUG_HOOK)
     try {
       Object.defineProperty(window, "__FLAP__", {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: {
-        stressAudio: function (n) {
-          if (!hadGesture || !AC) return 0;
-          const b = ensureSfx("jump");
-          if (!b) return 0;
-          for (let i = 0; i < n; i++) playSfx("probe" + i, b, 0.01);
-          return voices.length;
-        },
-        getState: function () {
-          return {
-            state: st,
-            panel: panel,
-            mode: mode,
-            score: score,
-            shownScore: shownScore,
-            best: best,
-            runFlaps: runFlaps,
-            runStreak: runStreak,
-            bestStreak: save.stats.bestStreak,
-            newBest: newBestRun || dailyNewBest,
-            daily: { date: save.daily.date, best: save.daily.best },
-            stats: {
-              runs: save.stats.runs,
-              flaps: save.stats.flaps,
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: {
+          stressAudio: function (n) {
+            if (!hadGesture || !ctxRunning()) return 0;
+            const b = ensureSfx("jump");
+            if (!b) return 0;
+            for (let i = 0; i < n; i++) playSfx("probe" + i, b, 0.01);
+            return voices.length;
+          },
+          getState: function () {
+            return {
+              state: st,
+              panel: panel,
+              mode: mode,
+              score: score,
+              shownScore: shownScore,
+              best: best,
+              runFlaps: runFlaps,
+              runStreak: runStreak,
               bestStreak: save.stats.bestStreak,
-            },
-            skin: save.skins.selected,
-            unlocked: save.skins.unlocked.slice(),
-            history: save.history.map(function (e) {
-              return { s: e.s, m: e.m, d: e.d, t: e.t };
-            }),
-            muted: muted,
-            music: save.settings.music,
-            haptics: save.settings.haptics,
-            tutorialSeen: save.tutorialSeen,
-            reduceMotion: reduce,
-            shareSupported: shareSupported,
-            fullscreenSupported: fsSupported,
-            fullscreen: isFullscreen(),
-            quality: quality,
-            frameEMA: frameEMA,
-            particles: parts.length,
-            audioState: AC ? AC.state : null,
-            audioTime: AC ? AC.currentTime : 0,
-            audioVoices: voices.length,
-            audioBuffers: SFX_KINDS.filter(function (k) {
-              return !!buffers[k];
-            }).length,
-            audioMusic: !!musicSrc,
-            audioMusicMode: musicBufKey,
-            audioMaster: masterGain ? masterGain.gain.value : 0,
-            audioMusicGain: musicGain ? musicGain.gain.value : 0,
-            audioSfxGain: sfxGain ? sfxGain.gain.value : 0,
-            audioLimit: limiter
-              ? {
-                  threshold: limiter.threshold.value,
-                  ratio: limiter.ratio.value,
-                  knee: limiter.knee.value,
+              newBest: newBestRun || dailyNewBest,
+              daily: { date: save.daily.date, best: save.daily.best },
+              stats: {
+                runs: save.stats.runs,
+                flaps: save.stats.flaps,
+                bestStreak: save.stats.bestStreak,
+              },
+              skin: save.skins.selected,
+              unlocked: save.skins.unlocked.slice(),
+              history: save.history.map(function (e) {
+                return { s: e.s, m: e.m, d: e.d, t: e.t };
+              }),
+              muted: muted,
+              music: save.settings.music,
+              haptics: save.settings.haptics,
+              tutorialSeen: save.tutorialSeen,
+              reduceMotion: reduce,
+              shareSupported: shareSupported,
+              fullscreenSupported: fsSupported,
+              fullscreen: isFullscreen(),
+              quality: quality,
+              frameEMA: frameEMA,
+              particles: parts.length,
+              audioState: AC ? AC.state : null,
+              audioTime: AC ? AC.currentTime : 0,
+              audioVoices: voices.length,
+              audioBuffers: SFX_KINDS.filter(function (k) {
+                return !!buffers[k];
+              }).length,
+              audioMusic: !!musicSrc,
+              audioMusicMode: musicBufKey,
+              audioMaster: masterGain ? masterGain.gain.value : 0,
+              audioMusicGain: musicGain ? musicGain.gain.value : 0,
+              audioSfxGain: sfxGain ? sfxGain.gain.value : 0,
+              audioLimit: limiter
+                ? {
+                    threshold: limiter.threshold.value,
+                    ratio: limiter.ratio.value,
+                    knee: limiter.knee.value,
+                  }
+                : null,
+              audioDuck: duck,
+              audioGesture: hadGesture,
+              audioResumes: audioResumes,
+              audioRebuilds: audioRebuilds,
+              audioGlitches: audioGlitches,
+              audioMusicId: musicId,
+              audioPending: pendingRebuild,
+              audioNan: audioNan,
+              audioEarlyCreate: earlyCreate,
+              creationBeforeGesture: earlyCreate,
+              musicRawKeys: Object.keys(musicRaw),
+              musicNan: (function () {
+                const o = {};
+                for (const k in musicRaw) {
+                  const d = musicRaw[k] && musicRaw[k].data;
+                  let n = 0;
+                  if (d)
+                    for (let i = 0; i < d.length; i++) if (!isFinite(d[i])) n++;
+                  o[k] = n;
                 }
-              : null,
-            audioDuck: duck,
-            audioGesture: hadGesture,
-            audioResumes: audioResumes,
-            audioRebuilds: audioRebuilds,
-            audioGlitches: audioGlitches,
-            audioMusicId: musicId,
-            audioPending: pendingRebuild,
-            dpr: DPR,
-            dprCap: Math.min(devicePixelRatio || 1, 2),
-            W: W,
-            H: H,
-            U: U,
-            siteUrl: siteUrl(),
-            pipeSeed: pipeSeed,
-            pipes: pipes.map(function (p) {
-              return { x: p.x, w: p.w, gap: p.gap, mid: p.mid, hit: p.hit };
-            }),
-            bird: bird ? { x: bird.x, y: bird.y, vy: bird.vy, s: bird.s } : null,
-            toast: toastObj.text,
-            frames: renderedFrames,
-            ui: {
-              hud: rectList(ui.hud),
-              readyModes: rectList(ui.readyModes),
-              readySkins: rectList(ui.readySkins),
-              pause: rectList(ui.pause),
-              over: rectList(ui.over),
-              panel: rectList(ui.panel),
-              overCard: ui.overCard,
-              pauseCard: ui.pauseCard,
-              panelCard: ui.panelCard,
-            },
-          };
+                return o;
+              })(),
+              dpr: DPR,
+              dprCap: Math.min(devicePixelRatio || 1, 2),
+              W: W,
+              H: H,
+              U: U,
+              siteUrl: siteUrl(),
+              pipeSeed: pipeSeed,
+              pipes: pipes.map(function (p) {
+                return { x: p.x, w: p.w, gap: p.gap, mid: p.mid, hit: p.hit };
+              }),
+              bird: bird
+                ? { x: bird.x, y: bird.y, vy: bird.vy, s: bird.s }
+                : null,
+              toast: toastObj.text,
+              frames: renderedFrames,
+              ui: {
+                hud: rectList(ui.hud),
+                readyModes: rectList(ui.readyModes),
+                readySkins: rectList(ui.readySkins),
+                pause: rectList(ui.pause),
+                over: rectList(ui.over),
+                panel: rectList(ui.panel),
+                overCard: ui.overCard,
+                pauseCard: ui.pauseCard,
+                panelCard: ui.panelCard,
+              },
+            };
+          },
         },
-      },
-    });
-  } catch (e) {}
+      });
+    } catch (e) {}
 })();

@@ -2,8 +2,6 @@
 
 A fullscreen Flappy Bird-style browser game. Vanilla JS, no build step, no CDN, no backend. Strict `'self'` CSP. Installable PWA with offline play.
 
-**Play live:** https://siliconvalley007.github.io/Flappy-Bird/
-
 ## Features
 
 - **Classic, Daily, and Practice modes.** Daily uses a date-seeded PRNG for pipe layouts; Practice is slower and forgiving and never records a best.
@@ -33,11 +31,11 @@ Best score, settings, skins, stats, daily result, and Top-10 history are saved i
 
 ## Audio
 
-Sound is synthesized at runtime into mono `AudioBuffer`s at the context sample rate (capped at 48 kHz): no audio files, no requests. Buffers render in short idle slices shortly after load, silently, so gameplay never blocks and the first flap is instant; the active mode's music loop is ready first and other modes follow. Nothing is audible until the first user gesture. One looping music source is started per mode and kept running; pause ducks it to half, tab-hide and mute ramp it to zero. SFX are short-lived buffer sources capped at 8 concurrent voices with a 40 ms rate limit per sound. The graph is master gain (0.55) -> compressor/limiter (threshold -6 dB, ratio 20, knee 0) -> output trim, with a brief music dip under SFX (forced back to 1 after 600 ms) and a looping ~-70 dB noise keepalive through the limiter. A 2 s watchdog plus gesture/visibility/focus self-heal restart a missing music source or a stuck-zero gain without tearing down a healthy graph. Suspend/interrupt only call `resume()` (debounced). A closed or silently-stuck context is rebuilt on the next user gesture, never from a timer. Window blur does not pause the game or audio. Append `?debug=1` to overlay context state, music, gains, duck, voices, resumes, and rebuilds.
+Sound is synthesized at runtime into mono `AudioBuffer`s at the context sample rate (capped at 48 kHz): no audio files, no requests. Raw Float32 samples render in short idle slices after load with no `AudioContext`; the context is created and `resume()`d only on a user-activating gesture (`pointerup`/`touchend`/`click`/`mousedown`/`keydown`, never Escape, never `pointerdown`/`touchstart`). Music and SFX wait until the context is `running`. Pause ducks music to half; tab-hide and mute ramp it to zero. SFX are short-lived buffer sources capped at 8 concurrent voices with a 40 ms rate limit per sound. The graph is master gain (0.55) -> compressor/limiter (threshold -6 dB, ratio 20, knee 0) -> output trim, with a brief music dip under SFX (forced back to 1 after 600 ms). Non-finite samples are zeroed before they enter an `AudioBuffer`. Timers, focus, pageshow, visibility, and the 2 s watchdog only call `resume()` (1 s debounce). A closed context is rebuilt on the next gesture. Window blur does not pause the game or audio. Append `?debug=1` to overlay context state, music, gains, duck, voices, resumes, rebuilds, NaN-frame count, and creation-before-gesture.
 
 ## PWA
 
-- The **INSTALL** button appears when installation is available.
+- Install from the browser UI (manifest + service worker). There is no in-page INSTALL button.
 - Offline: the service worker precaches the game and serves the cached shell if the network fails.
 - Updates: when a new build is waiting, **Update ready — tap to reload** appears. Tap it to activate the new worker and reload.
 - Shortcuts launch directly into Daily or Classic (`./?mode=daily`, `./?mode=classic`).
@@ -47,7 +45,7 @@ Sound is synthesized at runtime into mono `AudioBuffer`s at the context sample r
 No install. From this folder:
 
 ```bash
-python3 -m http.server 8000
+python -m http.server 8000
 ```
 
 Then open `http://localhost:8000`.
